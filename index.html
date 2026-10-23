@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Şifre Çarkı</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2433;--muted:#5b6475;--accent:#2f6fde;--accent2:#e8f0ff;--line:#d5d9e3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{margin:0 0 4px;font-size:28px}
+p.sub{margin:0 0 18px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+svg{width:100%;height:auto;display:block}
+.key{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+.key input[type=range]{flex:1;min-width:140px}
+.keynum{font-size:28px;font-weight:700;color:var(--accent);min-width:48px;text-align:center}
+label{font-weight:600;display:block;margin:10px 0 6px}
+textarea{width:100%;min-height:90px;font-size:18px;padding:10px;border:1px solid var(--line);border-radius:10px;font-family:inherit;text-transform:uppercase}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button{font-size:16px;padding:10px 14px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.alt{background:var(--accent2);color:var(--accent)}
+.out{font-size:20px;font-weight:600;letter-spacing:1px;background:var(--accent2);border-radius:10px;padding:12px;min-height:50px;word-break:break-word}
+.all{max-height:360px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px}
+.all div{padding:4px 6px;border-bottom:1px solid var(--line)}
+.all b{color:var(--accent);display:inline-block;width:34px}
+</style>
+</head>
+<body>
+<main>
+<h1>Şifre Çarkı</h1>
+<p class="sub">Sezar şifresi, 29 harfli Türk alfabesi. Anahtarı seç, mesajı yaz, şifrele ya da çöz.</p>
+<div class="grid">
+  <div class="card">
+    <svg id="wheel" viewBox="-210 -210 420 420" aria-label="Şifre çarkı"></svg>
+    <div class="key">
+      <span>Anahtar</span>
+      <input id="k" type="range" min="0" max="28" value="3">
+      <span class="keynum" id="kv">3</span>
+    </div>
+    <p class="sub" style="margin-top:8px">Dış halka: düz metin. İç halka: şifreli metin.</p>
+  </div>
+  <div class="card">
+    <label for="t">Mesaj</label>
+    <textarea id="t" placeholder="Mesajını buraya yaz">MERHABA</textarea>
+    <div class="btns">
+      <button id="enc">Şifrele</button>
+      <button id="dec">Çöz</button>
+      <button id="brute" class="alt">Tüm anahtarları dene</button>
+    </div>
+    <label>Sonuç</label>
+    <div class="out" id="o"></div>
+    <div class="all" id="all"></div>
+  </div>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2 style="margin:0 0 4px;font-size:22px">Anahtar Gücü</h2>
+  <p class="sub" style="margin:0 0 10px">Saniyede 10 milyar deneme yapan bir bilgisayar, tüm olasılıkları denemek için ne kadar beklemeli? Önce tahmin et, sonra tıkla.</p>
+  <div class="btns">
+    <button class="alt" data-n="28">Sezar şifresi</button>
+    <button class="alt" data-n="10000">4 haneli PIN</button>
+    <button class="alt" data-n="594823321">6 küçük harf</button>
+    <button class="alt" data-n="457163239653376">8 karakter (harf + rakam)</button>
+  </div>
+  <label for="pw">Ya da örnek bir parola yaz (gerçek parolanı yazma!)</label>
+  <input id="pw" type="text" autocomplete="off" style="width:100%;font-size:18px;padding:10px;border:1px solid var(--line);border-radius:10px" placeholder="ör. kedi2025!">
+  <div class="out" id="so" style="margin-top:10px">Bir seçenek seç.</div>
+  <p class="sub" style="margin-top:8px">Bu sayfa hiçbir şeyi internete göndermez.</p>
+</div>
+</main>
+<script>
+const A="ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ", N=A.length;
+const up=s=>s.toLocaleUpperCase('tr-TR');
+const shift=(s,k)=>[...up(s)].map(c=>{const i=A.indexOf(c);return i<0?c:A[((i+k)%N+N)%N]}).join('');
+const svg=document.getElementById('wheel'), k=document.getElementById('k'), kv=document.getElementById('kv');
+const ns="http://www.w3.org/2000/svg";
+function el(t,a,p){const e=document.createElementNS(ns,t);for(const x in a)e.setAttribute(x,a[x]);(p||svg).appendChild(e);return e}
+function ring(R1,R2,rt,fill,g){
+  el('circle',{r:R1,fill:fill,stroke:'#1d2433','stroke-width':2},g);
+  el('circle',{r:R2,fill:'#fff',stroke:'#1d2433','stroke-width':1},g);
+  for(let i=0;i<N;i++){
+    const a=360*i/N, b=(a+180/N)*Math.PI/180-Math.PI/2;
+    el('line',{x1:R2*Math.cos(b),y1:R2*Math.sin(b),x2:R1*Math.cos(b),y2:R1*Math.sin(b),stroke:'#9aa3b5','stroke-width':1},g);
+    const t=el('text',{x:0,y:-rt,'text-anchor':'middle','dominant-baseline':'middle','font-size':17,'font-weight':700,transform:`rotate(${a})`,fill:'#1d2433'},g);
+    t.textContent=A[i];
+  }
+}
+const outer=el('g',{}); ring(200,160,180,'#fff',outer);
+const inner=el('g',{}); ring(158,118,138,'#e8f0ff',inner);
+el('circle',{r:4,fill:'#1d2433'});
+el('path',{d:'M0,-205 L-7,-214 L7,-214 Z',fill:'#2f6fde'});
+function draw(){const v=+k.value;kv.textContent=v;inner.setAttribute('transform',`rotate(${-360*v/N})`);inner.style.transition='transform .3s'}
+k.oninput=draw; draw();
+const t=document.getElementById('t'), o=document.getElementById('o'), all=document.getElementById('all');
+document.getElementById('enc').onclick=()=>{all.innerHTML='';o.textContent=shift(t.value,+k.value)};
+document.getElementById('dec').onclick=()=>{all.innerHTML='';o.textContent=shift(t.value,-k.value)};
+document.getElementById('brute').onclick=()=>{
+  o.textContent='Bilgisayar '+(N-1)+' anahtarın hepsini bir saniyeden kısa sürede denedi:';
+  all.innerHTML='';
+  for(let i=1;i<N;i++){const d=document.createElement('div');const b=document.createElement('b');b.textContent=i;d.append(b,shift(t.value,-i));all.append(d)}
+};
+const so=document.getElementById('so');
+function fmtNum(n){return n<1e15?Math.round(n).toLocaleString('tr-TR'):n.toExponential(1).replace('e+',' × 10^')}
+function fmtTime(s){
+  const u=[[31536000e6,'milyon yıl'],[31536000,'yıl'],[86400,'gün'],[3600,'saat'],[60,'dakika'],[1,'saniye']];
+  if(s<1)return 'bir saniyeden çok daha kısa';
+  for(const [v,n] of u){if(s>=v){const x=s/v;return (x>=1e6?x.toExponential(1).replace('e+',' × 10^'):x.toLocaleString('tr-TR',{maximumFractionDigits:1}))+' '+n}}
+}
+function show(n,label){so.textContent=(label?label+': ':'')+fmtNum(n)+' olasılık. Bilgisayarın hepsini denemesi: '+fmtTime(n/1e10)+'.'}
+document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>show(+b.dataset.n,b.textContent));
+document.getElementById('pw').oninput=e=>{
+  const s=e.target.value;if(!s){so.textContent='Bir seçenek seç.';return}
+  let c=0;if(/[a-zçğıöşü]/.test(s))c+=29;if(/[A-ZÇĞİÖŞÜ]/.test(s))c+=29;if(/[0-9]/.test(s))c+=10;if(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ]/.test(s))c+=20;
+  show(Math.pow(c,s.length),s.length+' karakter, '+c+' farklı sembol');
+};
+</script>
+</body>
+</html>
